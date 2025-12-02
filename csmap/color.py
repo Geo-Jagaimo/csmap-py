@@ -23,46 +23,46 @@ def rgbify(arr: np.ndarray, method, scale: tuple[float, float] = None) -> np.nda
 
 def slope_red(arr: np.ndarray) -> np.ndarray:
     rgb = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb[0, :, :] = 255 - arr * 155  # R: 255 -> 100
-    rgb[1, :, :] = 245 - arr * 195  # G: 245 -> 50
-    rgb[2, :, :] = 235 - arr * 215  # B: 235 -> 20
+    rgb[0, :, :] = 247 - arr * 113  # R: 247 -> 134
+    rgb[1, :, :] = 213 - arr * 185  # G: 213 -> 28
+    rgb[2, :, :] = 213 - arr * 180  # B: 213 -> 33
     rgb[3, :, :] = 255
     return rgb
 
 
 def slope_blackwhite(arr: np.ndarray) -> np.ndarray:
     rgb = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb[0, :, :] = (1 - arr) * 255  # R
-    rgb[1, :, :] = (1 - arr) * 255  # G
-    rgb[2, :, :] = (1 - arr) * 255  # B
+    rgb[0, :, :] = 246 - arr * 210  # R: 246 -> 36
+    rgb[1, :, :] = 246 - arr * 210  # G: 246 -> 36
+    rgb[2, :, :] = 246 - arr * 210  # B: 246 -> 36
     rgb[3, :, :] = 255  # A
     return rgb
 
 
 def curvature_blue(arr: np.ndarray) -> np.ndarray:
     rgb = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb[0, :, :] = 35 + arr * 190  # R: 35 -> 225
-    rgb[1, :, :] = 80 + arr * 155  # G: 80 -> 235
-    rgb[2, :, :] = 100 + arr * 145  # B: 100 -> 245
+    rgb[0, :, :] = 42 + arr * 166  # R: 42 -> 208
+    rgb[1, :, :] = 95 + arr * 128  # G: 95 -> 223
+    rgb[2, :, :] = 131 + arr * 99  # B: 131 -> 230
     rgb[3, :, :] = 255
     return rgb
 
 
 def curvature_redyellowblue(arr: np.ndarray) -> np.ndarray:
-    # value:0-1 to: red -> yellow -> blue
-    # interpolate between red and yellow, and yellow and blue, by linear
+    # value:0-1 to: blue -> yellow -> red
+    # interpolate between blue and yellow, and yellow and red, by linear
 
-    # 0-0.5: blue -> white
+    # 0-0.5: blue -> yellow
     rgb1 = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb1[0, :, :] = 75 + arr * 170 * 2  # R: 75 -> 245
-    rgb1[1, :, :] = 100 + arr * 145 * 2  # G: 100 -> 245
-    rgb1[2, :, :] = 165 + arr * 80 * 2  # B: 165 -> 245
+    rgb1[0, :, :] = 50 + arr * 205 * 2  # R: 50 -> 255
+    rgb1[1, :, :] = 96 + arr * 158 * 2  # G: 96 -> 254
+    rgb1[2, :, :] = 207 - arr * 17 * 2  # B: 207 -> 190
 
-    # 0.5-1: white -> red
+    # 0.5-1: yellow -> red
     rgb2 = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb2[0, :, :] = 245 - (arr * 2 - 1) * 100  # R: 245 -> 145
-    rgb2[1, :, :] = 245 - (arr * 2 - 1) * 190  # G: 245 -> 55
-    rgb2[2, :, :] = 245 - (arr * 2 - 1) * 195  # B: 245 -> 50
+    rgb2[0, :, :] = 255 - (arr * 2 - 1) * 57  # R: 255 -> 198
+    rgb2[1, :, :] = 254 - (arr * 2 - 1) * 182  # G: 254 -> 72
+    rgb2[2, :, :] = 190 - (arr * 2 - 1) * 131  # B: 190 -> 59
 
     # blend
     rgb = np.where(arr < 0.5, rgb1, rgb2)
@@ -73,9 +73,9 @@ def curvature_redyellowblue(arr: np.ndarray) -> np.ndarray:
 
 def height_blackwhite(arr: np.ndarray) -> np.ndarray:
     rgb = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb[0, :, :] = (1 - arr) * 255  # R
-    rgb[1, :, :] = (1 - arr) * 255  # G
-    rgb[2, :, :] = (1 - arr) * 255  # B
+    rgb[0, :, :] = 36 + arr * 210  # R: 36 -> 246
+    rgb[1, :, :] = 36 + arr * 210  # G: 36 -> 246
+    rgb[2, :, :] = 36 + arr * 210  # B: 36 -> 246
     rgb[3, :, :] = 255
     return rgb
 
@@ -87,11 +87,11 @@ def blend(
     curvature_blue: np.ndarray,
     curvature_ryb: np.ndarray,
     blend_params: dict = {
-        "slope_bw": 0.5,  # alpha blending based on the paper
-        "curvature_ryb": 0.25,  # 0.5 / 2
-        "slope_red": 0.125,  # 0.5 / 2 / 2
-        "curvature_blue": 0.06125,  # 0.5 / 2 / 2 / 2
-        "dem": 0.030625,  # 0.5 / 2 / 2 / 2 / 2
+        "slope_bw": 0.25,  # 傾斜（白黒）
+        "curvature_ryb": 0.25,  # 曲率（青黄赤）
+        "slope_red": 0.25,  # 傾斜（白茶）
+        "curvature_blue": 0.125,  # 曲率（紺白）
+        "dem": 0.125,  # 標高（白黒）
     },
 ) -> np.ndarray:
     """blend all rgb
@@ -108,5 +108,16 @@ def blend(
         + curvature_ryb * blend_params["curvature_ryb"]
     )
     _blend = _blend.astype(np.uint8)  # force uint8
+
+    # 色の鮮明化:
+    _blend[0, :, :] = np.clip((_blend[0, :, :] - 65) / 169 * 255, 0, 255).astype(
+        np.uint8
+    )  # R: 65 -> 234
+    _blend[1, :, :] = np.clip((_blend[1, :, :] - 57) / 172 * 255, 0, 255).astype(
+        np.uint8
+    )  # G: 57 -> 229
+    _blend[2, :, :] = np.clip((_blend[2, :, :] - 66) / 150 * 255, 0, 255).astype(
+        np.uint8
+    )  # B: 66 -> 216
     _blend[3, :, :] = 255  # alpha
     return _blend
