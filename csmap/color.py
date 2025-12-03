@@ -93,6 +93,7 @@ def blend(
         "curvature_blue": 0.125,  # 曲率（紺白）
         "dem": 0.125,  # 標高（白黒）
     },
+    nodata_mask: np.ndarray = None,
 ) -> np.ndarray:
     """blend all rgb
     全てのndarrayは同じshapeであること
@@ -119,5 +120,11 @@ def blend(
     _blend[2, :, :] = np.clip((_blend[2, :, :] - 66) / 150 * 255, 0, 255).astype(
         np.uint8
     )  # B: 66 -> 216
-    _blend[3, :, :] = 255  # alpha
+
+    # alpha channel: Nodata areas are must be transparent (Alpha=0)
+    if nodata_mask is not None:
+        _blend[3, :, :] = np.where(nodata_mask, 0, 255)
+    else:
+        _blend[3, :, :] = 255
+
     return _blend

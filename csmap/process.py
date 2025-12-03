@@ -20,8 +20,15 @@ class CsmapParams:
     curvature_scale: tuple[float, float] = (-0.1, 0.1)
 
 
-def csmap(dem: np.ndarray, params: CsmapParams) -> np.ndarray:
+def csmap(dem: np.ndarray, params: CsmapParams, nodata: float = None) -> np.ndarray:
     """DEMからCS立体図を作成する"""
+    # create mask for Nodata
+    if nodata is not None:
+        nodata_mask = dem == nodata
+        dem = np.where(nodata_mask, 0, dem)  # make nodata to 0
+    else:
+        nodata_mask = None
+
     # calclucate elements
     slope = calc.slope(dem)
     g = calc.gaussianfilter(dem, params.gf_size, params.gf_sigma)
@@ -40,6 +47,10 @@ def csmap(dem: np.ndarray, params: CsmapParams) -> np.ndarray:
 
     dem_rgb = dem_rgb[:, 1:-1, 1:-1]  # remove padding
 
+    # remove padding from nodata mask
+    if nodata_mask is not None:
+        nodata_mask = nodata_mask[1:-1, 1:-1]
+
     # blend all rgb
     blend = color.blend(
         dem_rgb,
@@ -47,6 +58,7 @@ def csmap(dem: np.ndarray, params: CsmapParams) -> np.ndarray:
         slope_bw,
         curvature_blue,
         curvature_ryb,
+        nodata_mask=nodata_mask,
     )
 
     return blend
@@ -60,10 +72,11 @@ def _process_chunk(
     write_size_x: int,
     write_size_y: int,
     params: CsmapParams,
+    nodata: float = None,
     lock: Lock = None,
 ) -> np.ndarray:
     """チャンクごとの処理"""
-    csmap_chunk = csmap(chunk, params)
+    csmap_chunk = csmap(chunk, params, nodata)
     csmap_chunk_margin_removed = csmap_chunk[
         :,
         (params.gf_size + params.gf_sigma) // 2 : -(
@@ -95,6 +108,9 @@ def process(
     max_workers: int = 1,
 ):
     with rasterio.open(input_dem_path) as dem:
+        # Read nodata value from metadata
+        nodata = dem.nodata
+
         margin = params.gf_size + params.gf_sigma  # ガウシアンフィルタのサイズ+シグマ
         # チャンクごとの処理結果には「淵=margin」が生じるのでこの部分を除外する必要がある
         margin_to_removed = margin // 2  # 整数値に切り捨てた値*両端
@@ -151,6 +167,7 @@ def process(
                             write_size_x,
                             write_size_y,
                             params,
+                            nodata,
                         )
             else:  # 並列処理する場合=ThreadPoolExecutorを使用する
                 lock = Lock()  # 並列処理のロック
@@ -178,5 +195,6 @@ def process(
                                 write_size_x,
                                 write_size_y,
                                 params,
+                                nodata,
                                 lock,
                             )
