@@ -110,16 +110,14 @@ def blend(
     )
     _blend = _blend.astype(np.uint8)  # force uint8
 
-    # 色の鮮明化:
-    _blend[0, :, :] = np.clip((_blend[0, :, :] - 65) / 169 * 255, 0, 255).astype(
-        np.uint8
-    )  # R: 65 -> 234
-    _blend[1, :, :] = np.clip((_blend[1, :, :] - 57) / 172 * 255, 0, 255).astype(
-        np.uint8
-    )  # G: 57 -> 229
-    _blend[2, :, :] = np.clip((_blend[2, :, :] - 66) / 150 * 255, 0, 255).astype(
-        np.uint8
-    )  # B: 66 -> 216
+    # 色の鮮明化: 各チャンネルを0-255の範囲にストレッチ
+    for i in range(3):  # R, G, B
+        channel_min = _blend[i, :, :].min()
+        channel_max = _blend[i, :, :].max()
+        if channel_max > channel_min:
+            _blend[i, :, :] = (
+                (_blend[i, :, :] - channel_min) / (channel_max - channel_min) * 255
+            ).astype(np.uint8)
 
     # alpha channel: Nodata areas are must be transparent (Alpha=0)
     if nodata_mask is not None:
